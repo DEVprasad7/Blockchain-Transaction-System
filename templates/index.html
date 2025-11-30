@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Blockchain Visualizer</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+
+      h1 {
+        text-align: center;
+        color: white;
+        margin-bottom: 30px;
+        font-size: 2.5em;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      }
+
+      .dashboard {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 20px;
+        margin-bottom: 30px;
+      }
+
+      .panel {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      }
+
+      .panel h2 {
+        color: #667eea;
+        margin-bottom: 20px;
+        font-size: 1.5em;
+        border-bottom: 2px solid #667eea;
+        padding-bottom: 10px;
+      }
+
+      .form-group {
+        margin-bottom: 15px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 5px;
+        color: #333;
+        font-weight: 600;
+      }
+
+      input,
+      select {
+        width: 100%;
+        padding: 10px;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: border-color 0.3s;
+      }
+
+      input:focus,
+      select:focus {
+        outline: none;
+        border-color: #667eea;
+      }
+
+      button {
+        width: 100%;
+        padding: 12px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s;
+      }
+
+      button:hover {
+        transform: translateY(-2px);
+      }
+
+      button:active {
+        transform: translateY(0);
+      }
+
+      .clients-list,
+      .pending-list {
+        max-height: 200px;
+        overflow-y: auto;
+        margin-top: 15px;
+      }
+
+      .client-item,
+      .transaction-item {
+        background: #f8f9fa;
+        padding: 10px;
+        margin-bottom: 8px;
+        border-radius: 8px;
+        border-left: 4px solid #667eea;
+      }
+
+      .blockchain-container {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        overflow-x: auto;
+      }
+
+      .blockchain-visual {
+        display: flex;
+        gap: 30px;
+        padding: 20px;
+        min-width: max-content;
+      }
+
+      .block {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 12px;
+        min-width: 250px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        position: relative;
+      }
+
+      .block::after {
+        content: "→";
+        position: absolute;
+        right: -30px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 30px;
+        color: white;
+      }
+
+      .block:last-child::after {
+        content: "";
+      }
+
+      .block-header {
+        font-weight: 700;
+        font-size: 1.2em;
+        margin-bottom: 15px;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+        padding-bottom: 10px;
+      }
+
+      .block-info {
+        font-size: 0.9em;
+        line-height: 1.6;
+      }
+
+      .hash {
+        font-family: "Courier New", monospace;
+        word-break: break-all;
+        background: rgba(255, 255, 255, 0.2);
+        padding: 5px;
+        border-radius: 4px;
+        margin-top: 5px;
+      }
+
+      .empty-state {
+        text-align: center;
+        color: #999;
+        padding: 40px;
+        font-size: 1.2em;
+      }
+
+      .success-message {
+        background: #d4edda;
+        color: #155724;
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        display: none;
+      }
+
+      .error-message {
+        background: #f8d7da;
+        color: #721c24;
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        display: none;
+      }
+
+      .mining-status {
+        text-align: center;
+        padding: 20px;
+        font-size: 1.2em;
+        color: #667eea;
+        display: none;
+      }
+
+      .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #667eea;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 20px auto;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🔗 Blockchain Visualizer</h1>
+
+      <div class="dashboard">
+        <div class="panel">
+          <h2>Create Client</h2>
+          <div class="success-message" id="clientSuccess"></div>
+          <div class="error-message" id="clientError"></div>
+          <div class="form-group">
+            <label>Client Name</label>
+            <input type="text" id="clientName" placeholder="Enter name" />
+          </div>
+          <button onclick="createClient()">Create Client</button>
+          <div class="clients-list" id="clientsList"></div>
+        </div>
+
+        <div class="panel">
+          <h2>Create Transaction</h2>
+          <div class="success-message" id="txSuccess"></div>
+          <div class="error-message" id="txError"></div>
+          <div class="form-group">
+            <label>Sender</label>
+            <select id="sender"></select>
+          </div>
+          <div class="form-group">
+            <label>Recipient</label>
+            <select id="recipient"></select>
+          </div>
+          <div class="form-group">
+            <label>Amount</label>
+            <input type="number" id="amount" placeholder="0.00" step="0.01" />
+          </div>
+          <button onclick="createTransaction()">Create Transaction</button>
+
+          <h2 style="margin-top: 30px">Pending Transactions</h2>
+          <div class="pending-list" id="pendingList"></div>
+          <button
+            onclick="mineBlock()"
+            style="
+              margin-top: 15px;
+              background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            "
+          >
+            ⛏️ Mine Block
+          </button>
+        </div>
+      </div>
+
+      <div class="blockchain-container">
+        <h2 style="color: #667eea; margin-bottom: 20px">Blockchain</h2>
+        <div class="mining-status" id="miningStatus">
+          <div class="spinner"></div>
+          Mining in progress...
+        </div>
+        <div class="blockchain-visual" id="blockchainVisual">
+          <div class="empty-state">
+            No blocks yet. Create clients, transactions, and mine your first
+            block!
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      async function createClient() {
+        const name = document.getElementById("clientName").value;
+        if (!name) {
+          showMessage("clientError", "Please enter a name");
+          return;
+        }
+
+        try {
+          const response = await fetch("/api/clients", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name }),
+          });
+          const result = await response.json();
+
+          if (result.success) {
+            showMessage("clientSuccess", `Client "${name}" created!`);
+            document.getElementById("clientName").value = "";
+            loadClients();
+          }
+        } catch (error) {
+          showMessage("clientError", "Error creating client");
+        }
+      }
+
+      async function createTransaction() {
+        const sender = document.getElementById("sender").value;
+        const recipient = document.getElementById("recipient").value;
+        const value = parseFloat(document.getElementById("amount").value);
+
+        if (!sender || !recipient || !value) {
+          showMessage("txError", "Please fill all fields");
+          return;
+        }
+
+        try {
+          const response = await fetch("/api/transactions", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sender, recipient, value }),
+          });
+          const result = await response.json();
+
+          if (result.success) {
+            showMessage("txSuccess", "Transaction created!");
+            document.getElementById("amount").value = "";
+            loadPendingTransactions();
+          }
+        } catch (error) {
+          showMessage("txError", "Error creating transaction");
+        }
+      }
+
+      async function mineBlock() {
+        document.getElementById("miningStatus").style.display = "block";
+
+        try {
+          const response = await fetch("/api/mine", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ difficulty: 2 }),
+          });
+          const result = await response.json();
+
+          if (result.success) {
+            loadBlockchain();
+            loadPendingTransactions();
+          }
+        } catch (error) {
+          alert("Error mining block: " + error.message);
+        } finally {
+          document.getElementById("miningStatus").style.display = "none";
+        }
+      }
+
+      async function loadClients() {
+        const response = await fetch("/api/clients");
+        const result = await response.json();
+
+        const clientsList = document.getElementById("clientsList");
+        const sender = document.getElementById("sender");
+        const recipient = document.getElementById("recipient");
+
+        clientsList.innerHTML = "";
+        sender.innerHTML = '<option value="">Select sender</option>';
+        recipient.innerHTML = '<option value="">Select recipient</option>';
+
+        result.data.forEach((client) => {
+          clientsList.innerHTML += `<div class="client-item"><strong>${client.name}</strong><br><small>${client.identity}</small></div>`;
+          sender.innerHTML += `<option value="${client.name}">${client.name}</option>`;
+          recipient.innerHTML += `<option value="${client.name}">${client.name}</option>`;
+        });
+      }
+
+      async function loadPendingTransactions() {
+        const response = await fetch("/api/transactions/pending");
+        const result = await response.json();
+
+        const pendingList = document.getElementById("pendingList");
+        pendingList.innerHTML = "";
+
+        if (result.data.length === 0) {
+          pendingList.innerHTML =
+            '<div class="empty-state" style="padding: 20px; font-size: 0.9em;">No pending transactions</div>';
+        } else {
+          result.data.forEach((tx) => {
+            pendingList.innerHTML += `<div class="transaction-item"><strong>${tx.value}</strong> coins<br><small>${tx.time}</small></div>`;
+          });
+        }
+      }
+
+      async function loadBlockchain() {
+        const response = await fetch("/api/blockchain");
+        const result = await response.json();
+
+        const visual = document.getElementById("blockchainVisual");
+
+        if (result.data.length === 0) {
+          visual.innerHTML =
+            '<div class="empty-state">No blocks yet. Create clients, transactions, and mine your first block!</div>';
+        } else {
+          visual.innerHTML = "";
+          result.data.forEach((block) => {
+            visual.innerHTML += `
+                        <div class="block">
+                            <div class="block-header">Block #${
+                              block.block_number
+                            }</div>
+                            <div class="block-info">
+                                <strong>Nonce:</strong> ${block.nonce}<br>
+                                <strong>Transactions:</strong> ${
+                                  block.transactions.length
+                                }<br>
+                                <strong>Hash:</strong>
+                                <div class="hash">${block.block_hash.substring(
+                                  0,
+                                  20
+                                )}...</div>
+                                <strong>Previous:</strong>
+                                <div class="hash">${block.previous_hash.substring(
+                                  0,
+                                  20
+                                )}...</div>
+                            </div>
+                        </div>
+                    `;
+          });
+        }
+      }
+
+      function showMessage(id, message) {
+        const element = document.getElementById(id);
+        element.textContent = message;
+        element.style.display = "block";
+        setTimeout(() => (element.style.display = "none"), 3000);
+      }
+
+      // Load initial data
+      loadClients();
+      loadPendingTransactions();
+      loadBlockchain();
+
+      // Refresh every 5 seconds
+      setInterval(() => {
+        loadBlockchain();
+        loadPendingTransactions();
+      }, 5000);
+    </script>
+  </body>
+</html>
