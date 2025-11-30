@@ -63,13 +63,64 @@ class BlockchainManager:
         raise ValueError("Mining failed")
     
     def get_blockchain(self) -> List[dict]:
+        from blockchain import sha256
         return [{
             "block_number": i,
             "nonce": block.nonce,
             "block_hash": block.block_hash,
             "previous_hash": block.previous_block_hash,
-            "transactions": block.verified_transactions
+            "transactions": block.verified_transactions,
+            "block_data": block.block_data,
+            "is_tampered": "[TAMPERED]" in block.block_data,
+            "actual_hash": sha256(block.block_data) if "[TAMPERED]" in block.block_data else block.block_hash
         } for i, block in enumerate(self.blockchain)]
+    
+    def validate_blockchain(self) -> dict:
+        if not self.blockchain:
+            return {"valid": True, "message": "Blockchain is empty"}
+        
+        errors = []
+        
+        for i, block in enumerate(self.blockchain):
+            # Check if hash starts with required zeros (difficulty 2)
+            if not block.block_hash.startswith('00'):
+                errors.append(f"Block {i}: Invalid hash (doesn't meet difficulty)")
+            
+            # Check hash integrity
+            from blockchain import sha256
+            expected_hash = sha256(block.block_data)
+            if block.block_hash != expected_hash:
+                errors.append(f"Block {i}: Hash mismatch (block was tampered)")
+            
+            # Check chain linkage
+            if i > 0:
+                if block.previous_block_hash != self.blockchain[i-1].block_hash:
+                    errors.append(f"Block {i}: Chain broken (previous hash doesn't match)")
+        
+        if errors:
+            return {"valid": False, "errors": errors}
+        
+        return {"valid": True, "message": f"✅ Blockchain is valid ({len(self.blockchain)} blocks)"}
+    
+    def tamper_block(self, block_number: int) -> dict:
+        if block_number >= len(self.blockchain):
+            raise ValueError("Block not found")
+        
+        # Simulate tampering by modifying block data WITHOUT recalculating hash
+        # This is what a malicious actor would try to do
+        block = self.blockchain[block_number]
+        old_hash = block.block_hash
+        block.block_data = block.block_data + " [TAMPERED]"
+        # Hash stays the same (not recalculated) - this is the problem!
+        # Now: block_data changed, but block_hash is still the old value
+        # Validation will catch this mismatch
+        
+        from blockchain import sha256
+        new_hash_should_be = sha256(block.block_data)
+        
+        return {
+            "message": f"Block {block_number} tampered! Old hash: {old_hash[:20]}... New hash should be: {new_hash_should_be[:20]}... (but we kept old hash - validation will catch this!)"
+        }
     
     def get_all_clients(self) -> List[dict]:
         return [{"name": name, "identity": client.identity[:20] + "..."} 

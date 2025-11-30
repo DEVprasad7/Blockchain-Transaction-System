@@ -157,6 +157,7 @@
         transform: translateY(-50%);
         font-size: 30px;
         color: #f67d19ff;
+        pointer-events: none;
       }
 
       .block:last-child::after {
@@ -238,6 +239,88 @@
           transform: rotate(360deg);
         }
       }
+
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .modal-content {
+        background: #2a2a2a;
+        border: 2px solid #f67d19ff;
+        border-radius: 2px;
+        padding: 30px;
+        max-width: 800px;
+        max-height: 80vh;
+        overflow-y: auto;
+        position: relative;
+      }
+
+      .modal-header {
+        color: #f67d19ff;
+        font-size: 1.8em;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #f67d19ff;
+        padding-bottom: 10px;
+      }
+
+      .modal-close {
+        position: absolute;
+        top: 15px;
+        right: 20px;
+        font-size: 30px;
+        color: #f67d19ff;
+        cursor: pointer;
+        background: none;
+        border: none;
+        padding: 0;
+        width: auto;
+      }
+
+      .modal-close:hover {
+        color: #ff8533;
+      }
+
+      .modal-section {
+        margin-bottom: 20px;
+      }
+
+      .modal-section h3 {
+        color: #f67d19ff;
+        margin-bottom: 10px;
+        font-size: 1.2em;
+      }
+
+      .modal-hash {
+        font-family: "Courier New", monospace;
+        background: #1a1a1a;
+        padding: 10px;
+        border-radius: 4px;
+        word-break: break-all;
+        color: #ffffff;
+        border: 1px solid #444;
+      }
+
+      .transaction-detail {
+        background: #1a1a1a;
+        padding: 15px;
+        margin-bottom: 10px;
+        border-radius: 2px;
+        border-left: 4px solid #3b2066ff;
+      }
+
+      .block {
+        cursor: pointer;
+        transition: transform 0.2s;
+      }
     </style>
   </head>
   <body>
@@ -284,7 +367,14 @@
       </div>
 
       <div class="blockchain-container">
-        <h2 style="color: #f67d19ff; margin-bottom: 20px">Blockchain</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h2 style="color: #f67d19ff; margin: 0;">Blockchain</h2>
+          <button onclick="validateBlockchain()" style="width: auto; padding: 10px 20px; background: #3b2066ff;">
+            ✅ Validate Chain
+          </button>
+        </div>
+        <div class="success-message" id="validateSuccess"></div>
+        <div class="error-message" id="validateError"></div>
         <div class="mining-status" id="miningStatus">
           <div class="spinner"></div>
           Mining in progress...
@@ -295,6 +385,15 @@
             block!
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Block Details Modal -->
+    <div class="modal" id="blockModal" onclick="closeModal(event)">
+      <div class="modal-content" onclick="event.stopPropagation()">
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+        <div class="modal-header" id="modalHeader">Block Details</div>
+        <div id="modalBody"></div>
       </div>
     </div>
 
@@ -410,9 +509,12 @@
         }
       }
 
+      let blockchainData = [];
+
       async function loadBlockchain() {
         const response = await fetch("/api/blockchain");
         const result = await response.json();
+        blockchainData = result.data;
 
         const visual = document.getElementById("blockchainVisual");
 
@@ -422,12 +524,15 @@
         } else {
           visual.innerHTML = "";
           result.data.forEach((block) => {
+            const tamperedStyle = block.is_tampered ? 'border: 3px solid #ff4444; background: #4d1a1a;' : '';
+            const tamperedBadge = block.is_tampered ? '<span style="color: #ff4444; font-weight: bold;">⚠️ TAMPERED</span><br>' : '';
             visual.innerHTML += `
-                        <div class="block">
+                        <div class="block" onclick="showBlockDetails(${block.block_number})" style="${tamperedStyle}">
                             <div class="block-header">Block #${
                               block.block_number
                             }</div>
                             <div class="block-info">
+                                ${tamperedBadge}
                                 <strong>Nonce:</strong> ${block.nonce}<br>
                                 <strong>Transactions:</strong> ${
                                   block.transactions.length
@@ -461,11 +566,108 @@
       loadPendingTransactions();
       loadBlockchain();
 
-      // Refresh every 5 seconds
-      setInterval(() => {
-        loadBlockchain();
-        loadPendingTransactions();
-      }, 5000);
+      async function showBlockDetails(blockNumber) {
+        const block = blockchainData[blockNumber];
+        if (!block) return;
+
+        document.getElementById("modalHeader").textContent = `Block #${blockNumber} Details`;
+        
+        const modalBody = document.getElementById("modalBody");
+        const tamperedWarning = block.is_tampered ? '<p style="color: #ff4444; font-weight: bold; font-size: 1.1em;">⚠️ THIS BLOCK HAS BEEN TAMPERED WITH!</p>' : '';
+        
+        modalBody.innerHTML = `
+          ${tamperedWarning}
+          
+          <div class="modal-section">
+            <h3>Block Information</h3>
+            <p style="color: #f67d19ff;"><strong>Block Number:</strong> ${block.block_number}</p>
+            <p style="color: #f67d19ff;"><strong>Nonce:</strong> ${block.nonce}</p>
+            <p style="color: #f67d19ff;"><strong>Transactions Count:</strong> ${block.transactions.length}</p>
+            <p style="color: #f67d19ff;"><strong>Status:</strong> ${block.is_tampered ? '<span style="color: #ff4444;">Tampered</span>' : '<span style="color: #90ee90;">Valid</span>'}</p>
+            ${!block.is_tampered ? `<button onclick="tamperBlock(${block.block_number}); closeModal();" style="margin-top: 15px; background: #ff4444;">
+              ⚠️ Tamper This Block (Demo)
+            </button>` : ''}
+          </div>
+
+          <div class="modal-section">
+            <h3>Block Data (What gets hashed)</h3>
+            <div class="modal-hash" style="font-size: 0.8em; max-height: 150px; overflow-y: auto;">${block.block_data}</div>
+            <p style="color: #888; font-size: 0.85em; margin-top: 10px;">This is the raw data that gets hashed. Any change here breaks the hash.</p>
+          </div>
+
+          <div class="modal-section">
+            <h3>Block Hash (Stored - Original)</h3>
+            <div class="modal-hash">${block.block_hash}</div>
+            ${block.is_tampered ? `
+              <p style="color: #ff4444; margin-top: 10px; font-weight: bold;">⚠️ This hash is now INVALID!</p>
+              <h3 style="margin-top: 20px; color: #ff4444;">Actual Hash (After Tampering)</h3>
+              <div class="modal-hash" style="border: 2px solid #ff4444;">${block.actual_hash}</div>
+              <p style="color: #888; font-size: 0.85em; margin-top: 10px;">
+                ⚠️ The stored hash doesn't match the actual hash of the current data.<br>
+                This proves the block was tampered with!<br>
+                Notice: The new hash doesn't start with '00' (doesn't meet difficulty).
+              </p>
+            ` : ''}
+          </div>
+
+          <div class="modal-section">
+            <h3>Previous Block Hash</h3>
+            <div class="modal-hash">${block.previous_hash}</div>
+          </div>
+
+          <div class="modal-section">
+            <h3 style="color: #f67d19ff;">Transactions (${block.transactions.length})</h3>
+            ${block.transactions.map((tx, i) => `
+              <div class="transaction-detail">
+                <p style="color: #f67d19ff;"><strong>Transaction #${i + 1}</strong></p>
+                <p style="color: #f67d19ff;"><strong>Signature:</strong></p>
+                <div class="modal-hash" style="font-size: 0.85em; margin-top: 5px;">${tx}</div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+
+        document.getElementById("blockModal").style.display = "flex";
+      }
+
+      function closeModal(event) {
+        if (!event || event.target.id === "blockModal") {
+          document.getElementById("blockModal").style.display = "none";
+        }
+      }
+
+      async function validateBlockchain() {
+        try {
+          const response = await fetch("/api/validate");
+          const result = await response.json();
+
+          if (result.success && result.data.valid) {
+            showMessage("validateSuccess", result.data.message);
+          } else {
+            const errorMsg = result.data.errors ? result.data.errors.join(", ") : "Validation failed";
+            showMessage("validateError", errorMsg);
+          }
+        } catch (error) {
+          showMessage("validateError", "Error validating blockchain");
+        }
+      }
+
+      async function tamperBlock(blockNumber) {
+        try {
+          const response = await fetch(`/api/tamper/${blockNumber}`, {
+            method: "POST"
+          });
+          const result = await response.json();
+
+          if (result.success) {
+            alert(result.data.message);
+            loadBlockchain();
+          }
+        } catch (error) {
+          alert("Error tampering block");
+        }
+      }
+
     </script>
   </body>
 </html>

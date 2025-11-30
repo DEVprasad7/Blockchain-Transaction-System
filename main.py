@@ -83,4 +83,19 @@ def get_blockchain():
     return {"success": True, "data": blockchain_manager.get_blockchain()}
 
 
+@app.get("/api/validate")
+def validate_blockchain():
+    result = blockchain_manager.validate_blockchain()
+    return {"success": True, "data": result}
+
+
+@app.post("/api/tamper/{block_number}")
+def tamper_block(block_number: int):
+    try:
+        result = blockchain_manager.tamper_block(block_number)
+        return {"success": True, "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 uvicorn.run(app, host="localhost", port=5001)
