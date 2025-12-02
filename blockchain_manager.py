@@ -106,20 +106,15 @@ class BlockchainManager:
         if block_number >= len(self.blockchain):
             raise ValueError("Block not found")
         
-        # Simulate tampering by modifying block data WITHOUT recalculating hash
-        # This is what a malicious actor would try to do
         block = self.blockchain[block_number]
         old_hash = block.block_hash
         block.block_data = block.block_data + " [TAMPERED]"
-        # Hash stays the same (not recalculated) - this is the problem!
-        # Now: block_data changed, but block_hash is still the old value
-        # Validation will catch this mismatch
         
         from blockchain import sha256
-        new_hash_should_be = sha256(block.block_data)
+        block.block_hash = sha256(block.block_data)
         
         return {
-            "message": f"Block {block_number} tampered! Old hash: {old_hash[:20]}... New hash should be: {new_hash_should_be[:20]}... (but we kept old hash - validation will catch this!)"
+            "message": f"Block {block_number} tampered! Hash changed from {old_hash[:20]}... to {block.block_hash[:20]}..."
         }
     
     def get_all_clients(self) -> List[dict]:
@@ -133,3 +128,10 @@ class BlockchainManager:
             "value": t.value,
             "time": t.time
         } for t in self.pending_transactions]
+    
+    def reset(self) -> dict:
+        self.clients.clear()
+        self.transactions.clear()
+        self.blockchain.clear()
+        self.pending_transactions.clear()
+        return {"message": "Blockchain reset successfully"}

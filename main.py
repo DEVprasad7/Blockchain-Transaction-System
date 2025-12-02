@@ -98,4 +98,10 @@ def tamper_block(block_number: int):
         raise HTTPException(status_code=400, detail=str(e))
 
 
+@app.post("/api/reset")
+def reset_blockchain():
+    result = blockchain_manager.reset()
+    return {"success": True, "data": result}
+
+
 uvicorn.run(app, host="localhost", port=5001)
