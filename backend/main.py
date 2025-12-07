@@ -1,6 +1,5 @@
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.templating import Jinja2Templates
-from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
 from blockchain_manager import BlockchainManager
@@ -10,8 +9,15 @@ app = FastAPI(
     description="Interactive Blockchain Implementation",
     version="1.0.0",
 )
-templates = Jinja2Templates(directory="templates")
-app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# CORS configuration for Next.js frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Initialize blockchain manager
 blockchain_manager = BlockchainManager()
@@ -32,9 +38,9 @@ class MineRequest(BaseModel):
 
 
 @app.get("/")
-async def home(request: Request):
-    """Serve the main HTML interface."""
-    return templates.TemplateResponse("index.html", {"request": request})
+async def home():
+    """API health check."""
+    return {"status": "ok", "message": "Blockchain API is running"}
 
 
 @app.post("/api/clients")
