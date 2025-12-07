@@ -1,23 +1,8 @@
-# Core Dependencies - USED
 Crypto
-crypto
-fastapi>=0.121.0
-uvicorn>=0.34.0
-pycryptodome>=3.20.0
-pydantic>=2.0.0
-jinja2>=3.1.0
-
-# Unused Dependencies (from original template)
-# certifi
-# charset-normalizer
-# click
-# colorama
-# Flask-QRcode
-# idna
-# itsdangerous
-# MarkupSafe
-# Pillow
-# qrcode
-# requests
-# urllib3
-# Werkzeug
+fastapi
+uvicorn
+pycryptodome
+pydantic
+jinja2
+collections
+binascii
