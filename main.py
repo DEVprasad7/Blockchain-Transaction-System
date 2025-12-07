@@ -11,7 +11,7 @@ app = FastAPI(
     version="1.0.0",
 )
 templates = Jinja2Templates(directory="templates")
-app.mount("/public", StaticFiles(directory="public"), name="public")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Initialize blockchain manager
 blockchain_manager = BlockchainManager()
