@@ -171,7 +171,6 @@ export default function TransactionManager({ onTransactionCreated, refreshClient
       <input
         type="number"
         min="1"
-        max="5"
         value={difficulty}
         onChange={(e) => setDifficulty(parseInt(e.target.value) || 2)}
         className="w-full p-3 bg-zinc-900 border border-zinc-600 rounded text-white mb-4 focus:outline-none focus:border-orange-500"
@@ -182,7 +181,7 @@ export default function TransactionManager({ onTransactionCreated, refreshClient
         disabled={mining || pending.length === 0}
         className="w-full p-3 bg-cyan-500 text-white rounded font-semibold hover:bg-cyan-600 transition disabled:bg-zinc-600 disabled:cursor-not-allowed"
       >
-        {mining ? '⛏️ Mining...' : '⛏️ Mine Block'}
+        {mining ? 'Mining...' : 'Mine Block'}
       </button>
     </div>
   );
