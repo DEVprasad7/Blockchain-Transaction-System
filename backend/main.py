@@ -110,4 +110,4 @@ def reset_blockchain():
     return {"success": True, "data": result}
 
 
-uvicorn.run(app, host="localhost", port=3000)
+uvicorn.run(app, host="localhost", port=5001)
