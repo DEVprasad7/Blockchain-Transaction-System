@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
@@ -13,7 +13,7 @@ app = FastAPI(
 # CORS configuration for Next.js frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://blockchain-backend-seven.vercel.app"], # Earlier http://localhost:3000
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -110,4 +110,4 @@ def reset_blockchain():
     return {"success": True, "data": result}
 
 
-uvicorn.run(app)
+uvicorn.run(app, host="localhost", port=3000)
