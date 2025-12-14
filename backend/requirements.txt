@@ -1,8 +1,6 @@
-Crypto
 fastapi
 uvicorn
 pycryptodome
 pydantic
-jinja2
-collections
-binascii
+python-dotenv
+fastapi[all]

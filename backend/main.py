@@ -1,8 +1,12 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+import os
 import uvicorn
 from blockchain_manager import BlockchainManager
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = FastAPI(
     title="Blockchain Visualizer",
@@ -10,10 +14,10 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# CORS configuration for Next.js frontend
+# CORS Configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", 'https://blockchain-amber-tau.vercel.app'],
+    allow_origins=os.getenv("CORS_ORIGINS", "*").split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -21,6 +25,8 @@ app.add_middleware(
 
 # Initialize blockchain manager
 blockchain_manager = BlockchainManager()
+HOST = os.getenv("HOST_URL", "localhost")
+PORT = int(os.getenv("PORT", 5001))
 
 
 class ClientCreate(BaseModel):
@@ -38,9 +44,13 @@ class MineRequest(BaseModel):
 
 
 @app.get("/")
-async def home():
-    """API health check."""
-    return {"status": "ok", "message": "Blockchain API is running"}
+def home():
+    """API Info."""
+    return {
+        "name": "Blockchain Visualizer API",
+        "version": "1.0.0",
+        "status": "running"
+    }
 
 
 @app.post("/api/clients")
@@ -110,4 +120,5 @@ def reset_blockchain():
     return {"success": True, "data": result}
 
 
-uvicorn.run(app, host="localhost", port=5001)
+if __name__ == "__main__":
+    uvicorn.run(app, host=HOST, port=PORT)
