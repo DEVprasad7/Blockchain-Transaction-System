@@ -100,7 +100,7 @@ class BlockchainManager:
         if errors:
             return {"valid": False, "errors": errors}
         
-        return {"valid": True, "message": f"✅ Blockchain is valid ({len(self.blockchain)} blocks)"}
+        return {"valid": True, "message": f" Blockchain is valid ({len(self.blockchain)} blocks)"}
     
     def tamper_block(self, block_number: int) -> dict:
         if block_number >= len(self.blockchain):
